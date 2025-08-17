@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Form</title>
+</head>
+<body>
+    <h1>Welcome {{.User}}!</h1>
+    <form action="/pages/post">
+        <label for="post_title">Post Title:</label>
+        <input type="text" name="post_title" placeholder="My First Post"><br> 
+        <label for="blog">Blog Entry:</label> 
+        <input type="text" name="blog" placholder="Today I ..."><br> 
+    </form>
+</body>
+</html>

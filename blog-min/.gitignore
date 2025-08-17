@@ -1,0 +1,33 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*_test
+
+# Output of `go build`
+# Go workspace files
+*.out
+*.log
+
+# Dependency directories
+# Vendor directory (if using Go Modules, this is often included)
+# If using older dependency management like 'dep', 'vendor' might be ignored
+# vendor/
+
+# Editor/IDE specific files
+.idea/
+.vscode/
+*.swp
+*.bak
+*.swo
+.DS_Store
+Thumbs.db
+*.crt
+*.key
+*.cnf
+
+# Environment variables
+.env
