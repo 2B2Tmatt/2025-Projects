@@ -9,7 +9,7 @@ import (
 
 func Signup(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if r.Method == http.MethodGet {
-		http.ServeFile(w, r, "blog-min/web/templates/signup.html")
+		http.ServeFile(w, r, "web/templates/signup.html")
 		return
 	}
 	err := r.ParseForm()
@@ -21,7 +21,7 @@ func Signup(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	username := r.FormValue("username")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
-	password, err = encryption.GeneratePassword(password)
+	password, salt, err := encryption.GenerateNewPassword(password)
 	if err != nil {
 		log.Println("Error creating hash", err)
 		http.Error(w, "Error processing information", http.StatusInternalServerError)
@@ -29,15 +29,15 @@ func Signup(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	sqlStatement := `
-	INSERT INTO users (display_name, email, password_hash)
-	VALUES ($1, $2, $3)
+	INSERT INTO users (display_name, email, password_hash, salt)
+	VALUES ($1, $2, $3, $4)
 	`
-	_, err = db.Exec(sqlStatement, username, email, password)
+	_, err = db.Exec(sqlStatement, username, email, password, salt)
 	if err != nil {
 		log.Println("Error processing form", err)
 		http.Error(w, "Error processing form", http.StatusInternalServerError)
 		return
 	}
-	http.ServeFile(w, r, "blog-min/web/templates/redirect.html")
+	http.ServeFile(w, r, "web/templates/redirect.html")
 
 }
