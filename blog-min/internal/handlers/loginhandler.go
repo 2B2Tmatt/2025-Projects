@@ -2,13 +2,17 @@ package handlers
 
 import (
 	"blog-min/internal/encryption"
-	makesql "blog-min/internal/sql"
+	"database/sql"
 	"log"
 	"net/http"
 )
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	//Data Validation
+	if r.Method == http.MethodGet {
+		http.ServeFile(w, r, "blog-min/web/templates/login.html")
+		return
+	}
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("Error parsing form", err)
@@ -19,17 +23,21 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	password, err = encryption.GeneratePassword(password)
 	if err != nil {
-		log.Println("Error parsing form", err)
-		http.Error(w, "Error processing form", http.StatusInternalServerError)
+		log.Println("Error creating hash", err)
+		http.Error(w, "Error processing information", http.StatusInternalServerError)
 		return
 	}
 
 	sqlStatement := `
-	INSERT INTO users (display_name, email, password)
-	VALUES ($1, $2, $3)
+	SELECT password_hash FROM users WHERE display_name=$1
 	`
-	db := makesql.OpenDB()
-	err = db.QueryRow(sqlStatement, 30)
+	var dbpass string
+	db.QueryRow(sqlStatement, username).Scan(&dbpass)
+	if password != dbpass {
+		http.Error(w, "username or password incorrect", http.StatusUnauthorized)
+		return
+	}
+	http.ServeFile(w, r, "blog-min/web/templates/redirect.html")
 
 	//Search for user if user actually exists
 

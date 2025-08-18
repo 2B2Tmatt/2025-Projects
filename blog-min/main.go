@@ -13,7 +13,7 @@ func main() {
 	r := mux.NewRouter()
 	PORT := ":8080"
 
-	makesql.OpenDB()
+	db := makesql.OpenDB()
 	r.Handle("/", http.HandlerFunc(Redirect))
 	r.Handle("/pages/", http.HandlerFunc(Home))
 	r.Handle("/pages/signup", http.HandlerFunc(Signup))
