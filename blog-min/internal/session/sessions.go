@@ -1,36 +1,81 @@
-package session
+package sessions
 
 import (
-	"context"
 	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
+	"encoding/base64"
+	"errors"
+	"log"
+	"net/http"
 	"time"
 )
 
-type Store struct {
-	DB       *sql.DB
-	Lifetime time.Duration
-	Cookie   string
-	Secure   bool
+type Session struct {
+	Sid        string
+	Uid        int64
+	Created_at time.Time
+	Expires_at time.Time
 }
 
-func randSID() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
+func generateToken(length int) string {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		log.Fatalf("Failed to generate token: %v\n", err)
 	}
-	return hex.EncodeToString(b), nil
+	return base64.URLEncoding.EncodeToString(bytes)
 }
 
-func (s *Store) Create(ctx context.Context, userID int64) (string, time.Time, error) {
-	sid, err := randSID()
+func CreateSession(w http.ResponseWriter, db *sql.DB, uid int64, duration time.Duration) (*Session, error) {
+	sid := generateToken(32)
+	_, err := db.Exec(`
+	INSERT INTO sessions (sid, uid, expires_at) VALUES ($1, $2, $3)`,
+		sid, uid, (time.Now().Add(duration)))
 	if err != nil {
-		return "", time.Time{}, err
+		return nil, err
 	}
-	exp := time.Now().Add(s.Lifetime)
-	_, err = s.DB.ExecContext(ctx,
-		`INSERT into sessions (sid, user_id, expires_at) VALUES ($1,$2,$3)`,
-		sid, userID, exp)
-	return sid, exp, err
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    sid,
+		Path:     "/",
+		Expires:  time.Now().Add(duration),
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+	session := Session{sid, uid, time.Now(), time.Now().Add(duration)}
+	return &session, nil
+}
+
+func EndSession(w http.ResponseWriter, db *sql.DB, sid string) error {
+	_, err := db.Exec(`DELETE FROM SESSIONS WHERE sid=$1`, sid)
+	if err != nil {
+		return err
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return nil
+}
+
+func CheckSession(db *sql.DB, sid string) (int64, error) {
+	var uid int64
+	err := db.QueryRow(`
+        SELECT uid FROM sessions
+        WHERE sid = $1 AND expires_at > now()
+    `, sid).Scan(&uid)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil // no session
+	}
+	if err != nil {
+		return 0, err // real DB error
+	}
+	return uid, nil // valid session
 }

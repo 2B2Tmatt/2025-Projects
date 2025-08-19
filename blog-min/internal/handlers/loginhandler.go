@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"blog-min/internal/encryption"
+	sessions "blog-min/internal/session"
 	"database/sql"
 	"log"
 	"net/http"
+	"time"
 )
 
 func Login(w http.ResponseWriter, r *http.Request, db *sql.DB) {
@@ -23,16 +25,23 @@ func Login(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	password := r.FormValue("password")
 
 	sqlStatement := `
-	SELECT password_hash,salt FROM users WHERE display_name=$1
+	SELECT password_hash,id FROM users WHERE display_name=$1
 	`
-	var dbpass, dbsalt string
-	db.QueryRow(sqlStatement, username).Scan(&dbpass, &dbsalt)
-	if !encryption.CheckPassword(password, dbpass, dbsalt) {
+	var dbhash string
+	var uid int64
+	db.QueryRow(sqlStatement, username).Scan(&dbhash, &uid)
+	if !encryption.CheckPasswordHash(password, dbhash) {
 		http.Error(w, "username or password incorrect", http.StatusUnauthorized)
 		return
 	}
-	http.ServeFile(w, r, "web/templates/redirect.html")
+	_, err = sessions.CreateSession(w, db, uid, time.Hour*24)
+	if err != nil {
+		log.Println("Error creating session", err)
+		http.Error(w, "Error creating session", http.StatusInternalServerError)
+		return
+	}
 
+	http.ServeFile(w, r, "web/templates/redirect.html")
 	//Search for user if user actually exists
 
 	//is user active

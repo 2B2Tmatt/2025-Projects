@@ -23,7 +23,7 @@ func main() {
 	r.HandleFunc("/pages/login", func(w http.ResponseWriter, r *http.Request) { handlers.Login(w, r, db) })
 	r.HandleFunc("/pages/post", func(w http.ResponseWriter, r *http.Request) { handlers.Post(w, r, db) })
 	r.HandleFunc("/pages/posts", handlers.Posts)
-
+	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) { handlers.Logout(w, r, db) })
 	log.Println("Running on Port:", PORT)
 	// err := http.ListenAndServeTLS(PORT, "server.crt", "server.key", r)
 	err := http.ListenAndServe(PORT, r)
