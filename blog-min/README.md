@@ -1,7 +1,7 @@
 How to run: 
 
-git clone https://github.com/2B2Tmatt/2025-Projects/tree/main/blog-min
-cd blog-min 
+git clone https://github.com/2B2Tmatt/2025-Projects.git
+cd 2025-Projects/blog-min
 
 docker compose up --build
 
