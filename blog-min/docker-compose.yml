@@ -1,0 +1,29 @@
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres             
+      POSTGRES_PASSWORD: Thefakestpoggers123!       
+      POSTGRES_DB: blog_db01               
+    ports:
+      - "5432:5432"                       
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  # docker-compose.yml (web section)
+  web:
+    build: .
+    environment:
+      PORT: "9000"
+      DATABASE_URL: "host=db port=5432 user=postgres password=Thefakestpoggers123! dbname=blog_db01 sslmode=disable"
+    ports:
+      - "9000:9000"
+    depends_on:
+      - db
+    volumes: 
+      - ./web/templates:/app/web/templates:ro
+
+
+volumes:
+  db-data:

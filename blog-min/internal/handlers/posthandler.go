@@ -1,13 +1,18 @@
 package handlers
 
 import (
+	"blog-min/internal/helper"
 	"database/sql"
 	"net/http"
 )
 
 func Post(w http.ResponseWriter, r *http.Request, db *sql.DB, uid int64) {
 	if r.Method == http.MethodGet {
-		http.ServeFile(w, r, "web/templates/post.html")
+		user, err := helper.GetUsername(db, uid)
+		if err != nil {
+			http.Error(w, "username not found", http.StatusNotFound)
+		}
+		helper.Render(w, user, "web/templates/post.html")
 		return
 	}
 

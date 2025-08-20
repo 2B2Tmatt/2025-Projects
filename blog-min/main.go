@@ -1,8 +1,8 @@
 package main
 
 import (
+	"blog-min/internal/dbconn"
 	"blog-min/internal/middleware"
-	makesql "blog-min/internal/sql"
 	"log"
 	"net/http"
 
@@ -20,10 +20,17 @@ func main() {
 	r := mux.NewRouter()
 	PORT := ":9000"
 
-	db := makesql.OpenDB()
+	db, err := dbconn.OpenDB()
+	if err != nil {
+		log.Fatal("Error opening db")
+	}
+	err = dbconn.InitSchema(db)
+	if err != nil {
+		log.Fatal("Error creating tables")
+	}
 	defer db.Close()
 	r.HandleFunc("/", handlers.Redirect)
-	r.HandleFunc("/pages", handlers.Home)
+	r.HandleFunc("/pages", func(w http.ResponseWriter, r *http.Request) { handlers.Home(w, r, db) })
 	r.HandleFunc("/pages/signup", func(w http.ResponseWriter, r *http.Request) { handlers.Signup(w, r, db) })
 	r.HandleFunc("/pages/login", func(w http.ResponseWriter, r *http.Request) { handlers.Login(w, r, db) })
 	// r.HandleFunc("/pages/post", Working)
@@ -32,13 +39,14 @@ func main() {
 			handlers.Post(w, r, db, uid)
 		}),
 	).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/pages/posts", handlers.Posts)
+	r.HandleFunc("/pages/posts", func(w http.ResponseWriter, r *http.Request) { handlers.Posts(w, r, db) })
 	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) { handlers.Logout(w, r, db) })
+	r.HandleFunc("/pages/{username}", func(w http.ResponseWriter, r *http.Request) { handlers.User(w, r, db) })
 	log.Println("Running on Port:", PORT)
 	// err := http.ListenAndServeTLS(PORT, "server.crt", "server.key", r)
 	wrapped := middleware.NoStore(r)
 	wrapped = middleware.RequestLog(wrapped)
-	err := http.ListenAndServe(PORT, wrapped)
+	err = http.ListenAndServe(PORT, wrapped)
 	if err != nil {
 		log.Fatal("Listen and Serve:", err)
 	}

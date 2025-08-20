@@ -7,15 +7,11 @@
 # Test binaries
 *_test
 
-# Output of `go build`
+
 # Go workspace files
 *.out
 *.log
-
-# Dependency directories
-# Vendor directory (if using Go Modules, this is often included)
-# If using older dependency management like 'dep', 'vendor' might be ignored
-# vendor/
+*.bak
 
 # Editor/IDE specific files
 .idea/
@@ -29,5 +25,5 @@ Thumbs.db
 *.key
 *.cnf
 
-# Environment variables
+
 .env

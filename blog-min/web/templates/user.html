@@ -10,10 +10,10 @@
         <a class="btn" href="/pages/signup">Signup</a>
         <a class="btn" href="/pages/login">Login</a>
         <a class="btn" href="/pages/post">Post</a>
-        <a class="btn" href="/pages/{{.User.User}}">My Posts</a>
+        <a class="btn" href="/pages">Home</a>
     </div>
     <h1>Welcome {{.User.User}}!</h1>
-    <h2>Blog Posts</h2> 
+    <h2>Your Blog Posts</h2> 
     <ul>
         {{range .Posts}}
             <h3>{{.Title}}</h3>
@@ -21,7 +21,7 @@
             <p>{{.Body}}</p>
         {{else}}
          <br><br> 
-         <h1>No Posts Yet. Be our First!</h1></h2>
+         <h1>No Posts Yet. You got this!</h1></h2>
         {{end}}
     </ul>
 </body>

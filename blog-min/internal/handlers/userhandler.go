@@ -4,9 +4,13 @@ import (
 	"blog-min/internal/helper"
 	"database/sql"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-func Posts(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func User(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	vars := mux.Vars(r)
+	username := vars["username"]
 	page := helper.PageData{
 		User:  &helper.User{User: "Guest"},
 		Posts: nil,
@@ -22,7 +26,7 @@ func Posts(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	posts, err := helper.GetPost(db)
+	posts, err := helper.GetUserPost(db, username)
 	if err != nil {
 		_ = helper.Render(w, page, "web/templates/posts.html")
 		return
@@ -30,4 +34,5 @@ func Posts(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	page.User = user
 	page.Posts = posts
 	helper.Render(w, page, "web/templates/posts.html")
+
 }
