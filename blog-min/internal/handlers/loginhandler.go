@@ -41,7 +41,7 @@ func Login(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	http.ServeFile(w, r, "web/templates/redirect.html")
+	http.Redirect(w, r, "/pages", http.StatusSeeOther)
 	//Search for user if user actually exists
 
 	//is user active

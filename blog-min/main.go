@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blog-min/internal/middleware"
 	makesql "blog-min/internal/sql"
 	"log"
 	"net/http"
@@ -11,9 +12,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func Working(w http.ResponseWriter, r *http.Request) {
+	log.Println("I work")
+}
+
 func main() {
 	r := mux.NewRouter()
-	PORT := ":8080"
+	PORT := ":9000"
 
 	db := makesql.OpenDB()
 	defer db.Close()
@@ -21,12 +26,19 @@ func main() {
 	r.HandleFunc("/pages", handlers.Home)
 	r.HandleFunc("/pages/signup", func(w http.ResponseWriter, r *http.Request) { handlers.Signup(w, r, db) })
 	r.HandleFunc("/pages/login", func(w http.ResponseWriter, r *http.Request) { handlers.Login(w, r, db) })
-	r.HandleFunc("/pages/post", func(w http.ResponseWriter, r *http.Request) { handlers.Post(w, r, db) })
+	// r.HandleFunc("/pages/post", Working)
+	r.HandleFunc("/pages/post",
+		middleware.RequireSession(db, func(w http.ResponseWriter, r *http.Request, uid int64) {
+			handlers.Post(w, r, db, uid)
+		}),
+	).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/pages/posts", handlers.Posts)
 	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) { handlers.Logout(w, r, db) })
 	log.Println("Running on Port:", PORT)
 	// err := http.ListenAndServeTLS(PORT, "server.crt", "server.key", r)
-	err := http.ListenAndServe(PORT, r)
+	wrapped := middleware.NoStore(r)
+	wrapped = middleware.RequestLog(wrapped)
+	err := http.ListenAndServe(PORT, wrapped)
 	if err != nil {
 		log.Fatal("Listen and Serve:", err)
 	}

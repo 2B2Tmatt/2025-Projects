@@ -37,9 +37,10 @@ func CreateSession(w http.ResponseWriter, db *sql.DB, uid int64, duration time.D
 		Name:     "session_token",
 		Value:    sid,
 		Path:     "/",
-		Expires:  time.Now().Add(duration),
 		HttpOnly: true,
+		Secure:   false, // true if using https
 		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(24 * time.Hour),
 	})
 	session := Session{sid, uid, time.Now(), time.Now().Add(duration)}
 	return &session, nil
@@ -64,18 +65,18 @@ func EndSession(w http.ResponseWriter, db *sql.DB, sid string) error {
 	return nil
 }
 
-func CheckSession(db *sql.DB, sid string) (int64, error) {
+func CheckSession(db *sql.DB, sid string) (int64, bool, error) {
 	var uid int64
 	err := db.QueryRow(`
         SELECT uid FROM sessions
-        WHERE sid = $1 AND expires_at > now()
+        WHERE sid = $1
     `, sid).Scan(&uid)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, nil // no session
+		return 0, false, nil // no session
 	}
 	if err != nil {
-		return 0, err // real DB error
+		return 0, false, err // real DB error
 	}
-	return uid, nil // valid session
+	return uid, true, nil // valid session
 }

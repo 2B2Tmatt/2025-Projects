@@ -7,11 +7,12 @@
 </head>
 <body>
     <h1>Welcome {{.User}}!</h1>
+    <h2>This doesn't work!</h2>
     <form action="/pages/post" method="POST">
         <label for="post_title">Post Title:</label>
         <input type="text" name="post_title" placeholder="My First Post"><br> 
         <label for="blog">Blog Entry:</label> 
-        <textarea cols="12" rows="5" name="blog">Today I ...</textarea><br> 
+        <textarea cols="12" rows="5" name="blog"></textarea><br> 
         <button type="submit">Submit</button>
     </form>
 </body>

@@ -38,6 +38,5 @@ func Signup(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Error(w, "Error processing form", http.StatusInternalServerError)
 		return
 	}
-	http.ServeFile(w, r, "web/templates/redirect.html")
-
+	http.Redirect(w, r, "/pages", http.StatusSeeOther)
 }

@@ -7,12 +7,13 @@
 </head>
 <body>
     <h1>Welcome {{.User}}!</h1>
-    <a href="/pages/signup"><button>Signup</button></a>
-    <a href="/pages/login"><button>Login</button></a>
-    <a href="/pages/post"><button>Post</button></a>
-    <a href="/pages/posts"><button>See Posts</button></a>
-    <form action="/logout" method="POST">
+<a class="btn" href="/pages/signup">Signup</a>
+<a class="btn" href="/pages/login">Login</a>
+<a class="btn" href="/pages/post">Post</a>
+<a class="btn" href="/pages/posts">See Posts</a>
+<form action="/logout" method="POST" style="display:inline;">
   <button type="submit">Log out</button>
 </form>
+
 </body>
 </html>
