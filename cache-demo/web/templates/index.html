@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Weather App</h1>
+    <form action="/pages/home" method="POST">
+        <label for="latitude">Latitude:</label>
+        <input type="text" name="latitude" placeholder="-90 - +90">
+        <label for="longitude">Longitude</label>
+        <input type="text" name="longitude" placeholder="-180 - +180">
+        <button type="submit">Get Forecast</button>
+    </form>
+    <h2>Result:</h2>
+    <div> 
+        {{if .Period.Renderable}}
+            <h3>Report:</h3>
+            <p>Name: {{.Period.Name}}</p>
+            <p>Temperature: {{.Period.Temperature}}{{.Period.TempU}}</p>
+            <p>Precipitation Probability: {{.Period.ProbabilityPrecipitation.Value}}%</p>
+            <p>Winds: {{.Period.WindSpeed}} {{.Period.WindDirection}}</p>
+            <p>Short Description: {{.Period.Short}}</p>
+            <p>Detailed Description: {{.Period.Detailed}}</p>
+        {{else}}
+            <p>Nothing Yet</p> 
+        {{end}}
+    </div>
+</body>
+</html>
