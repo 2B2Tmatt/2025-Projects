@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"cache-demo/internal/cache"
 	"cache-demo/internal/templates"
+	"cache-demo/internal/types"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,35 +12,7 @@ import (
 	"time"
 )
 
-type GridData struct {
-	Properties struct {
-		GridID string `json:"gridId"`
-		GridX  int64  `json:"gridX"`
-		GridY  int64  `json:"gridY"`
-	} `json:"properties"`
-}
-
-type Forecast struct {
-	Properties struct {
-		Period []Period `json:"periods"`
-	} `json:"properties"`
-}
-
-type Period struct {
-	Renderable               bool
-	Name                     string `json:"name"`
-	Temperature              int64  `json:"temperature"`
-	TempU                    string `json:"temperatureUnit"`
-	ProbabilityPrecipitation struct {
-		Value int64 `json:"value"`
-	} `json:"probabilityOfPrecipitation"`
-	WindSpeed     string `json:"windSpeed"`
-	WindDirection string `json:"windDirection"`
-	Short         string `json:"shortForecast"`
-	Detailed      string `json:"detailedForecast"`
-}
-
-func Home(w http.ResponseWriter, r *http.Request) {
+func Home(w http.ResponseWriter, r *http.Request, cache *cache.Cache) {
 	if r.Method == http.MethodGet {
 		http.ServeFile(w, r, "web/templates/index.html")
 		return
@@ -54,7 +28,11 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	latitude = strings.TrimSpace(latitude)
 	longitude := r.FormValue("longitude")
 	longitude = strings.TrimSpace(longitude)
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://api.weather.gov/points/%s,%s", latitude, longitude), nil)
+	req, err := http.NewRequestWithContext(
+		r.Context(),
+		http.MethodGet,
+		fmt.Sprintf("https://api.weather.gov/points/%s,%s", latitude, longitude),
+		nil)
 	if err != nil {
 		http.Error(w, "Error talking to weather api", http.StatusInternalServerError)
 		return
@@ -73,37 +51,50 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error retreving data")
 		return
 	}
-	var gridData GridData
+	var gridData types.GridData
 	if err = json.NewDecoder(resp.Body).Decode(&gridData); err != nil {
 		http.Error(w, "Error decoding data", http.StatusInternalServerError)
 		log.Println("Error decoding data")
 		return
 	}
-	log.Println(gridData.Properties.GridID, gridData.Properties.GridX, gridData.Properties.GridY)
-	req, err = http.NewRequest(http.MethodGet, fmt.Sprintf("https://api.weather.gov/gridpoints/%s/%d,%d/forecast",
-		gridData.Properties.GridID, gridData.Properties.GridX, gridData.Properties.GridY), nil)
-	if err != nil {
-		http.Error(w, "Error talking to weather api", http.StatusInternalServerError)
-		return
+	gridKey := gridData.ParseToKey()
+	weatherReport, exists := cache.Get(*gridKey)
+	if !exists {
+		log.Println(gridData.Properties.GridID, gridData.Properties.GridX, gridData.Properties.GridY)
+		req, err = http.NewRequestWithContext(r.Context(), http.MethodGet, fmt.Sprintf("https://api.weather.gov/gridpoints/%s/%d,%d/forecast",
+			gridData.Properties.GridID, gridData.Properties.GridX, gridData.Properties.GridY), nil)
+		if err != nil {
+			http.Error(w, "Error talking to weather api", http.StatusInternalServerError)
+			return
+		}
+		req.Header.Set("User-Agent", "cache-demo hi@gmail.com")
+		req.Header.Set("Accept", "application/geo+json")
+		resp, err = client.Do(req)
+		if err != nil {
+			http.Error(w, "Error talking to weather api", http.StatusInternalServerError)
+			log.Println("Error accessing api")
+			return
+		}
+		defer resp.Body.Close()
+		var forecast types.Forecast
+		json.NewDecoder(resp.Body).Decode(&forecast)
+		forecastValue := forecast.ParseToVal()
+		log.Println(forecast.Properties.Period[0].Name, forecast.Properties.Period[0].Temperature, forecast.Properties.Period[0].TempU,
+			forecast.Properties.Period[0].ProbabilityPrecipitation.Value, forecast.Properties.Period[0].WindSpeed,
+			forecast.Properties.Period[0].WindDirection, forecast.Properties.Period[0].Short, forecast.Properties.Period[0].Detailed)
+		forecast.Properties.Period[0].Renderable = true
+		type View struct{ Period types.Period }
+		view := View{
+			Period: forecastValue.Periods[0],
+		}
+		cache.Set(*gridKey, *forecastValue)
+		templates.Render(w, view, "web/templates/index.html")
+	} else {
+		type View struct{ Period types.Period }
+		view := View{
+			Period: weatherReport.Periods[0],
+		}
+		templates.Render(w, view, "web/templates/index.html")
 	}
-	req.Header.Set("User-Agent", "cache-demo hi@gmail.com")
-	req.Header.Set("Accept", "application/geo+json")
-	resp, err = client.Do(req)
-	if err != nil {
-		http.Error(w, "Error talking to weather api", http.StatusInternalServerError)
-		log.Println("Error accessing api")
-		return
-	}
-	defer resp.Body.Close()
-	var forecast Forecast
-	json.NewDecoder(resp.Body).Decode(&forecast)
-	log.Println(forecast.Properties.Period[0].Name, forecast.Properties.Period[0].Temperature, forecast.Properties.Period[0].TempU,
-		forecast.Properties.Period[0].ProbabilityPrecipitation.Value, forecast.Properties.Period[0].WindSpeed,
-		forecast.Properties.Period[0].WindDirection, forecast.Properties.Period[0].Short, forecast.Properties.Period[0].Detailed)
-	forecast.Properties.Period[0].Renderable = true
-	type View struct{ Period Period }
-	view := View{
-		Period: forecast.Properties.Period[0],
-	}
-	templates.Render(w, view, "web/templates/index.html")
+
 }
