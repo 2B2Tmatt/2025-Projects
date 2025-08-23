@@ -11,10 +11,11 @@ import (
 
 func main() {
 	cache := cache.CreateCache()
+	go cache.BackgroundProcessor()
 	PORT := ":9000"
 	r := mux.NewRouter()
 	r.HandleFunc("/pages/home", func(w http.ResponseWriter, r *http.Request) { handlers.Home(w, r, cache) })
-	log.Println("Start server on port", PORT)
+	log.Println("Starting server on port", PORT)
 	err := http.ListenAndServe(PORT, r)
 	if err != nil {
 		log.Fatal("Listen and Serve:", err)

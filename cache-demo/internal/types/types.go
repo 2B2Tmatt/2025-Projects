@@ -21,7 +21,7 @@ func (g *GridData) ParseToKey() *GridKey {
 func (f *Forecast) ParseToVal() *ForecastVals {
 	return &ForecastVals{
 		Periods:   f.Properties.Period,
-		ExpiresAt: time.Now().Add(6 * time.Hour),
+		ExpiresAt: f.Properties.Period[0].EndTime,
 	}
 }
 
@@ -33,9 +33,10 @@ type Forecast struct {
 
 type Period struct {
 	Renderable               bool
-	Name                     string `json:"name"`
-	Temperature              int64  `json:"temperature"`
-	TempU                    string `json:"temperatureUnit"`
+	EndTime                  time.Time `json:"endTime"`
+	Name                     string    `json:"name"`
+	Temperature              int64     `json:"temperature"`
+	TempU                    string    `json:"temperatureUnit"`
 	ProbabilityPrecipitation struct {
 		Value int64 `json:"value"`
 	} `json:"probabilityOfPrecipitation"`

@@ -12,9 +12,16 @@ import (
 	"time"
 )
 
+type View struct{ Period types.Period }
+
 func Home(w http.ResponseWriter, r *http.Request, cache *cache.Cache) {
 	if r.Method == http.MethodGet {
-		http.ServeFile(w, r, "web/templates/index.html")
+		view := View{
+			Period: types.Period{
+				Renderable: false,
+			},
+		}
+		templates.Render(w, view, "web/templates/index.html")
 		return
 	}
 	err := r.ParseForm()
@@ -47,7 +54,7 @@ func Home(w http.ResponseWriter, r *http.Request, cache *cache.Cache) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, "upstream error", http.StatusBadGateway)
+		http.Error(w, "upstream error - US locations please", http.StatusBadGateway)
 		log.Println("Error retreving data")
 		return
 	}
@@ -83,14 +90,12 @@ func Home(w http.ResponseWriter, r *http.Request, cache *cache.Cache) {
 			forecast.Properties.Period[0].ProbabilityPrecipitation.Value, forecast.Properties.Period[0].WindSpeed,
 			forecast.Properties.Period[0].WindDirection, forecast.Properties.Period[0].Short, forecast.Properties.Period[0].Detailed)
 		forecast.Properties.Period[0].Renderable = true
-		type View struct{ Period types.Period }
 		view := View{
 			Period: forecastValue.Periods[0],
 		}
 		cache.Set(*gridKey, *forecastValue)
 		templates.Render(w, view, "web/templates/index.html")
 	} else {
-		type View struct{ Period types.Period }
 		view := View{
 			Period: weatherReport.Periods[0],
 		}
