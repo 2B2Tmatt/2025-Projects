@@ -4,16 +4,12 @@
 *.so
 *.dylib
 
-# Test binaries
+
 *_test
-
-
-# Go workspace files
 *.out
 *.log
 *.bak
-
-# Editor/IDE specific files
+.env 
 .idea/
 .vscode/
 *.swp
