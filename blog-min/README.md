@@ -1,9 +1,3 @@
-in bash~
-git clone https://github.com/2B2Tmatt/2025-Projects.git
-cd 2025-Projects/blog-min
-
-docker compose up --build
-
-Open: http://localhost:9000/pages
-
-Docker should be installed prior
+install go dependencies 
+in terminal: 
+go run main.go
