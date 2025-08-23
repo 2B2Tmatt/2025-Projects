@@ -1,0 +1,3 @@
+﻿# Lines are:  original==>replacement
+TheActualSecretGoesHere==>REDACTED
+postgres://postgres:TheActualSecret@db:5432/blog_db01==>postgres://postgres:REDACTED@db:5432/blog_db01
