@@ -5,6 +5,9 @@ import (
 	"cache-demo/internal/handlers"
 	"log"
 	"net/http"
+	"time"
+
+	mw "cache-demo/internal/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -16,7 +19,9 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/pages/home", func(w http.ResponseWriter, r *http.Request) { handlers.Home(w, r, cache) })
 	log.Println("Starting server on port", PORT)
-	err := http.ListenAndServe(PORT, r)
+	rateLimiter := mw.NewRateLimiter(120, time.Second)
+	wrapped := mw.LimitRates(r, rateLimiter)
+	err := http.ListenAndServe(PORT, wrapped)
 	if err != nil {
 		log.Fatal("Listen and Serve:", err)
 	}
